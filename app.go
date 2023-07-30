@@ -1,41 +1,50 @@
 package main
 
 import (
-	"github.com/mailru/easyjson"
+	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"google.golang.org/protobuf/proto"
 	"log"
+	"net/http"
 )
 
-type BinanceMessage struct {
-	Stream string  `json:"stream"`
-	Data   Message `json:"data"`
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
-type Message struct {
-	S  string `json:"s"`
-	B  string `json:"b"`
-	BB string `json:"B"`
-	A  string `json:"a"`
-	AA string `json:"A"`
-}
+func StartGin() {
+	r := gin.Default()
 
-func StartPulsar() {
-	// Here you should replace with your own data source
-	// For example, you can use a channel to receive data
-	dataChannel := make(chan []byte)
+	r.LoadHTMLGlob("templates/*")
 
-	for dataBytes := range dataChannel {
-		var msg BinanceMessage
-		if err := easyjson.Unmarshal(dataBytes, &msg); err != nil {
-			log.Fatal("Failed to unmarshal data: ", err)
-		}
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "home.html", nil)
+	})
 
-		// Convert the Message to JSON bytes
-		jsonData, err := easyjson.Marshal(msg.Data)
+	r.GET("/ws", func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 		if err != nil {
-			log.Fatal("Failed to marshal data: ", err)
+			return
 		}
+		defer conn.Close()
 
-		// Send the JSON bytes to the global dataChannel
-		dataChannel <- jsonData
-	}
+		// Here you should replace with your own data source
+		// For example, you can use a channel to receive data
+		dataChannel := make(chan []byte)
+
+		go func() {
+			for dataBytes := range dataChannel {
+				var data Message
+				if err := proto.Unmarshal(dataBytes, &data); err != nil {
+					log.Fatal("Failed to unmarshal data: ", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, dataBytes); err != nil {
+					return
+				}
+			}
+		}()
+	})
+
+	r.Run() // listen and serve on 0.0.0.0:8080
 }

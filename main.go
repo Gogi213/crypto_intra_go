@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import "log"
@@ -8,5 +7,5 @@ func main() {
 
 	// Запускаем функции из других файлов
 	go StartGin() // из файла app.go
-	StartApp()    // из файла binance_pulsar.go
+	StartPulsar() // из файла binance_pulsar.go
 }

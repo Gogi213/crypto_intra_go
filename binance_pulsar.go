@@ -14,9 +14,9 @@ import (
 var API_KEY = "jByRuDyDvM3bQl71hLgadWt932jodjvpJRqvXsQRIWHfpSZwxYBR7BWFBOXO7o6b"
 
 var pairsList = [][]string{
-	{"1inchbtc", "1inchbusd", "1inchusdt", "aavebnb", "aavebtc", "aavebusd", "aaveusdt", "acabtc", "acabusd", "acatry", "acausdt", "achbtc", "achbusd", "achtry", "achusdt", "acmbusd", "acmusdt", "adabnb", "adabrl", "adabtc", "adabusd", "adaeth", "adaeur", "adatry", "adausdt", "adadownusdt"},
-	{"alpineusdt", "ambbusd", "ambusdt", "ampbusd", "ampusdt", "ankrbtc", "ankrbusd", "ankrtry", "ankrusdt", "antusdt", "apebtc", "apebusd", "apetry", "apeusdt", "api3usdt", "aptbtc", "aptbusd", "apttry", "aptusdt", "arbtc", "arusdt", "arbbtc", "arbeth", "arbtry", "arbtusd", "arbusdt"},
-	{"atomusdt", "auctionbtc", "auctionbusd", "auctionusdt", "audiotry", "audiousdt", "avabtc", "avausdt", "avaxbnb", "avaxbtc", "avaxbusd", "avaxeth", "avaxeur", "avaxtry", "avaxusdt", "axsbtc", "axsbusd", "axsusdt", "badgerusdt", "bakebusd", "bakeusdt", "balusdt", "bandbusd", "btcusdt"},
+	{"1inchbtc", "1inchbusd", "1inchusdt"},
+	{"alpineusdt", "ambbusd", "ambusdt"},
+	{"atomusdt", "auctionbtc", "btcusdt"},
 }
 
 func StartPulsar(dataChannel chan []byte) {
@@ -58,20 +58,7 @@ func StartPulsar(dataChannel chan []byte) {
 					break
 				}
 
-				var binanceMessage BinanceMessage
-				err = json.Unmarshal(message, &binanceMessage)
-				if err != nil {
-					log.Println("Error unmarshalling message: ", err)
-					continue
-				}
-
-				jsonData, err := easyjson.Marshal(binanceMessage.Data)
-				if err != nil {
-					log.Println("Error marshalling message: ", err)
-					continue
-				}
-
-				dataChannel <- jsonData
+				dataChannel <- message
 			}
 		}(pairs)
 	}
