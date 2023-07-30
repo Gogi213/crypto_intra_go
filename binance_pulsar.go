@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/streadway/amqp"
 )
 
 type BinanceMessage struct {
@@ -54,30 +53,6 @@ func StartApp() {
 				log.Fatal(err)
 			}
 
-			rabbitConn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-			if err != nil {
-				log.Fatal("Failed to connect to RabbitMQ: ", err)
-			}
-			defer rabbitConn.Close()
-
-			ch, err := rabbitConn.Channel()
-			if err != nil {
-				log.Fatal("Failed to open a channel: ", err)
-			}
-			defer ch.Close()
-
-			q, err := ch.QueueDeclare(
-				"binance_queue",
-				false,
-				false,
-				false,
-				false,
-				nil,
-			)
-			if err != nil {
-				log.Fatal("Failed to declare a queue: ", err)
-			}
-
 			for {
 				_, message, err := conn.ReadMessage()
 				if err != nil {
@@ -91,26 +66,6 @@ func StartApp() {
 				err = json.Unmarshal(message, &binanceMessage)
 				if err != nil {
 					log.Println("Error unmarshalling message: ", err)
-					continue
-				}
-
-				body, err := json.Marshal(binanceMessage)
-				if err != nil {
-					log.Println("Error marshalling message: ", err)
-					continue
-				}
-
-				err = ch.Publish(
-					"",
-					q.Name,
-					false,
-					false,
-					amqp.Publishing{
-						ContentType: "application/json",
-						Body:        body,
-					})
-				if err != nil {
-					log.Println("Failed to publish a message: ", err)
 					continue
 				}
 			}

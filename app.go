@@ -1,10 +1,9 @@
-// app.go
 package main
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/streadway/amqp"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"net/http"
 )
@@ -30,36 +29,21 @@ func StartGin() {
 		}
 		defer conn.Close()
 
-		connRabbit, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-		if err != nil {
-			log.Fatal("Failed to connect to RabbitMQ: ", err)
-		}
-		defer connRabbit.Close()
+		// Here you should replace with your own data source
+		// For example, you can use a channel to receive data
+		dataChannel := make(chan []byte)
 
-		ch, err := connRabbit.Channel()
-		if err != nil {
-			log.Fatal("Failed to open a channel: ", err)
-		}
-		defer ch.Close()
-
-		msgs, err := ch.Consume(
-			"binance_queue",
-			"",
-			true,
-			false,
-			false,
-			false,
-			nil,
-		)
-		if err != nil {
-			log.Fatal("Failed to register a consumer: ", err)
-		}
-
-		for d := range msgs {
-			if err := conn.WriteMessage(websocket.TextMessage, d.Body); err != nil {
-				return
+		go func() {
+			for dataBytes := range dataChannel {
+				var data Message
+				if err := proto.Unmarshal(dataBytes, &data); err != nil {
+					log.Fatal("Failed to unmarshal data: ", err)
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, dataBytes); err != nil {
+					return
+				}
 			}
-		}
+		}()
 	})
 
 	r.Run() // listen and serve on 0.0.0.0:8080
