@@ -1,11 +1,21 @@
+// main.go
 package main
 
-import "log"
+import (
+	"net/http"
+	_ "net/http/pprof"
+	"runtime/pprof"
+)
 
 func main() {
-	log.Println("Starting application...")
+	dataChannel := make(chan []byte)
+
+	// Start profiling server
+	go func() {
+		http.ListenAndServe("localhost:6060", nil)
+	}()
 
 	// Запускаем функции из других файлов
-	go StartGin() // из файла app.go
-	StartPulsar() // из файла binance_pulsar.go
+	go StartGin(dataChannel) // из файла app.go
+	StartPulsar(dataChannel) // из файла binance_pulsar.go
 }

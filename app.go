@@ -1,10 +1,9 @@
+// app.go
 package main
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"google.golang.org/protobuf/proto"
-	"log"
 	"net/http"
 )
 
@@ -13,10 +12,9 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func StartGin() {
+func StartGin(dataChannel chan []byte) {
 	r := gin.Default()
-
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLFiles("templates/home.html")
 
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "home.html", nil)
@@ -27,24 +25,14 @@ func StartGin() {
 		if err != nil {
 			return
 		}
-		defer conn.Close()
 
-		// Here you should replace with your own data source
-		// For example, you can use a channel to receive data
-		dataChannel := make(chan []byte)
-
-		go func() {
-			for dataBytes := range dataChannel {
-				var data Message
-				if err := proto.Unmarshal(dataBytes, &data); err != nil {
-					log.Fatal("Failed to unmarshal data: ", err)
-				}
-				if err := conn.WriteMessage(websocket.TextMessage, dataBytes); err != nil {
-					return
-				}
+		for {
+			message := <-dataChannel
+			if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+				return
 			}
-		}()
+		}
 	})
 
-	r.Run() // listen and serve on 0.0.0.0:8080
+	r.Run()
 }
