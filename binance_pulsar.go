@@ -1,3 +1,4 @@
+// binance_pulsar.go
 package main
 
 import (
@@ -7,11 +8,8 @@ import (
 	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/mailru/easyjson"
 )
-
-type BinanceMessage struct {
-	Symbol string `json:"s"`
-}
 
 var API_KEY = "jByRuDyDvM3bQl71hLgadWt932jodjvpJRqvXsQRIWHfpSZwxYBR7BWFBOXO7o6b"
 
@@ -21,7 +19,7 @@ var pairsList = [][]string{
 	{"atomusdt", "auctionbtc", "auctionbusd", "auctionusdt", "audiotry", "audiousdt", "avabtc", "avausdt", "avaxbnb", "avaxbtc", "avaxbusd", "avaxeth", "avaxeur", "avaxtry", "avaxusdt", "axsbtc", "axsbusd", "axsusdt", "badgerusdt", "bakebusd", "bakeusdt", "balusdt", "bandbusd", "btcusdt"},
 }
 
-func StartApp() {
+func StartPulsar(dataChannel chan []byte) {
 	var wg sync.WaitGroup
 
 	for _, pairs := range pairsList {
@@ -60,14 +58,20 @@ func StartApp() {
 					break
 				}
 
-				log.Println("Received message: ", string(message))
-
 				var binanceMessage BinanceMessage
 				err = json.Unmarshal(message, &binanceMessage)
 				if err != nil {
 					log.Println("Error unmarshalling message: ", err)
 					continue
 				}
+
+				jsonData, err := easyjson.Marshal(binanceMessage.Data)
+				if err != nil {
+					log.Println("Error marshalling message: ", err)
+					continue
+				}
+
+				dataChannel <- jsonData
 			}
 		}(pairs)
 	}

@@ -3,30 +3,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.css">
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
-    <style>
-        #binanceTable {
-            margin: 50px auto;
-            width: 80% !important;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 0 10px rgba(0,0,0,0.15);
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binance WebSocket</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.js"></script>
 </head>
 <body>
     <table id="binanceTable" class="display">
         <thead>
             <tr>
                 <th>Symbol</th>
-                <th>Ask Price</th>
-                <th>Ask Quantity</th>
-                <th>Bid Price</th>
-                <th>Bid Quantity</th>
+                <th>Best Bid Price</th>
+                <th>Best Bid Qty</th>
+                <th>Best Ask Price</th>
+                <th>Best Ask Qty</th>
             </tr>
         </thead>
         <tbody>
@@ -34,7 +25,7 @@
     </table>
 
     <script>
-        var socket = new WebSocket('ws://' + location.host + '/ws');
+        var socket = new WebSocket('ws://localhost:8080/ws');
         var table = $('#binanceTable').DataTable();
 
         socket.onmessage = function(event) {
