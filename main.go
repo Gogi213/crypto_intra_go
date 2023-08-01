@@ -4,11 +4,10 @@ package main
 import (
 	"net/http"
 	_ "net/http/pprof"
-	"runtime/pprof"
 )
 
 func main() {
-	dataChannel := make(chan []byte)
+	dataChannel := make(chan []byte, 20000)
 
 	// Start profiling server
 	go func() {
