@@ -1,3 +1,4 @@
+// main.go
 package main
 
 import (
@@ -13,7 +14,8 @@ type Config struct {
 }
 
 func main() {
-	dataChannel := make(chan []byte, 20000)
+	dataChannel1 := make(chan []byte, 20000)
+	dataChannel2 := make(chan []byte, 20000)
 
 	// Start profiling server
 	go func() {
@@ -24,10 +26,10 @@ func main() {
 	if len(args) > 1 {
 		switch args[1] {
 		case "instance1":
-			go StartGin(dataChannel) // Запуск Gin только для instance1
-			StartPulsar(dataChannel, Instance1)
+			go StartGin(dataChannel1, dataChannel2) // Запуск Gin только для instance1
+			StartPulsar(dataChannel1, Instance1)
 		case "instance2":
-			StartPulsar(dataChannel, Instance2)
+			StartPulsar(dataChannel2, Instance2)
 		default:
 			log.Fatal("Unknown instance. Please provide either 'instance1' or 'instance2'.")
 		}

@@ -8,11 +8,11 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  5024,
-	WriteBufferSize: 5024,
+	ReadBufferSize:  7024,
+	WriteBufferSize: 7024,
 }
 
-func StartGin(dataChannel chan []byte) {
+func StartGin(dataChannel1, dataChannel2 chan []byte) {
 	r := gin.Default()
 	r.LoadHTMLFiles("templates/home.html")
 
@@ -26,13 +26,18 @@ func StartGin(dataChannel chan []byte) {
 			return
 		}
 
-		for {
-			message := <-dataChannel
-			if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
-				return
-			}
-		}
+		go handleConnection(conn, dataChannel1)
+		go handleConnection(conn, dataChannel2)
 	})
 
 	r.Run()
+}
+
+func handleConnection(conn *websocket.Conn, dataChannel chan []byte) {
+	for {
+		message := <-dataChannel
+		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+			return
+		}
+	}
 }
