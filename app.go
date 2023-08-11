@@ -1,43 +1,111 @@
 // app.go
+// app.go
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
-	"net/http"
+	"github.com/fasthttp/websocket"
+	"github.com/valyala/fasthttp"
+	"io"
+	"log"
+	"net"
 )
 
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  7024,
-	WriteBufferSize: 7024,
+var upgrader = websocket.FastHTTPUpgrader{
+	ReadBufferSize:  200000,
+	WriteBufferSize: 200000,
+	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
+		return true
+	},
 }
 
-func StartGin(dataChannel1, dataChannel2 chan []byte) {
-	r := gin.Default()
-	r.LoadHTMLFiles("templates/home.html")
+func StartServer(dataChannels []chan []byte, port1 string, port2 string) {
+	log.Println("Server started")
 
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "home.html", nil)
-	})
+	fs := &fasthttp.FS{
+		Root:       "templates",
+		IndexNames: []string{"home.html"},
+	}
+	fsHandler := fs.NewRequestHandler()
 
-	r.GET("/ws", func(c *gin.Context) {
-		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	go func() {
+		ln, err := net.Listen("tcp", ":"+port1)
 		if err != nil {
-			return
+			log.Fatal(err)
 		}
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			go handleConn(conn, dataChannels[0])
+		}
+	}()
 
-		go handleConnection(conn, dataChannel1)
-		go handleConnection(conn, dataChannel2)
-	})
+	go func() {
+		ln, err := net.Listen("tcp", ":"+port2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			go handleConn(conn, dataChannels[1])
+		}
+	}()
 
-	r.Run()
+	server := fasthttp.Server{
+		Handler: func(ctx *fasthttp.RequestCtx) {
+			switch string(ctx.Path()) {
+			case "/":
+				fsHandler(ctx)
+			case "/ws1":
+				handleWebsocket(ctx, dataChannels[0])
+			case "/ws2":
+				handleWebsocket(ctx, dataChannels[1])
+			default:
+				ctx.Error("Unsupported path", fasthttp.StatusNotFound)
+			}
+		},
+	}
+
+	log.Fatal(server.ListenAndServe(":8080"))
 }
 
-func handleConnection(conn *websocket.Conn, dataChannel chan []byte) {
+func handleWebsocket(ctx *fasthttp.RequestCtx, dataChannel chan []byte) {
+	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
+		defer conn.Close()
+
+		for data := range dataChannel {
+			err := conn.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				log.Println(err)
+				break
+			}
+		}
+	})
+
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func handleConn(conn net.Conn, dataChannel chan []byte) {
+	defer conn.Close()
 	for {
-		message := <-dataChannel
-		if err := conn.WriteMessage(websocket.TextMessage, message); err != nil {
+		data := make([]byte, 20000)
+		n, err := conn.Read(data)
+		if err != nil {
+			if err == io.EOF {
+				log.Println("Connection closed")
+				return
+			}
+			log.Println(err)
 			return
 		}
+		dataChannel <- data[:n]
 	}
 }

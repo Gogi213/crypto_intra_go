@@ -1,9 +1,10 @@
-// binance_pulsar.go
+// binance_pulsar
 package main
 
 import (
 	"encoding/json"
 	"log"
+	"net"
 	"net/http"
 	"sync"
 
@@ -11,8 +12,9 @@ import (
 	goproxy "golang.org/x/net/proxy"
 )
 
-func StartPulsar(dataChannel chan []byte, config Config) {
+func StartPulsar(dataChannel chan []byte, config Config, port string) {
 	var wg sync.WaitGroup
+	var logCount int
 
 	for i, pairs := range config.PairsList {
 		wg.Add(1)
@@ -62,7 +64,31 @@ func StartPulsar(dataChannel chan []byte, config Config) {
 				wg.Add(1)
 				go func(message []byte) {
 					defer wg.Done()
-					dataChannel <- message
+					var data map[string]interface{}
+					json.Unmarshal(message, &data)
+					if _, ok := data["u"]; ok {
+						logCount++
+						log.Printf("Log calls: %d", logCount)
+					}
+
+					log.Printf("Sending message to dataChannel: %s", string(message))
+
+					tcpConn, err := net.Dial("tcp", "localhost:"+port)
+					if err != nil {
+						log.Fatal(err)
+					}
+					defer tcpConn.Close()
+
+					_, err = tcpConn.Write(append(message, '\n'))
+					if err != nil {
+						log.Println(err)
+					}
+
+					// Write data to CSV
+					if data, ok := data["data"].(map[string]interface{}); ok {
+						writeDataToCSV([]string{data["s"].(string), data["b"].(string), data["B"].(string), data["a"].(string), data["A"].(string)})
+					}
+
 				}(message)
 			}
 		}(pairs, config.APIKeys[i%len(config.APIKeys)], config.ProxyAddresses[i%len(config.ProxyAddresses)])
