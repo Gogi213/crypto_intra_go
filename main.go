@@ -8,27 +8,31 @@ import (
 	"os"
 )
 
-type Config struct {
-	APIKeys        []string
-	ProxyAddresses []string
-	PairsList      [][]string
-}
-
 func main() {
-	dataChannel1 := make(chan []byte, 300000)
-	dataChannel2 := make(chan []byte, 300000)
-	defer close(dataChannel1)
-	defer close(dataChannel2)
+	dataChannels1 := []chan []byte{
+		make(chan []byte, 300000),
+		make(chan []byte, 300000),
+		make(chan []byte, 300000),
+	}
+	dataChannels2 := []chan []byte{
+		make(chan []byte, 300000),
+		make(chan []byte, 300000),
+		make(chan []byte, 300000),
+	}
+
+	for _, ch := range append(dataChannels1, dataChannels2...) {
+		defer close(ch)
+	}
 
 	args := os.Args
 	if len(args) > 1 {
 		switch args[1] {
 		case "server":
-			go StartServer([]chan []byte{dataChannel1, dataChannel2}, "12345", "12346")
+			go StartServer([][]chan []byte{dataChannels1, dataChannels2}, []string{"50000", "50001", "50002"}, []string{"60000", "60001", "60002"})
 		case "instance1":
-			go StartPulsar(dataChannel1, Instance1, "12345")
+			go StartPulsar(dataChannels1, Instance1, []string{"50000", "50001", "50002"})
 		case "instance2":
-			go StartPulsar(dataChannel2, Instance2, "12346")
+			go StartPulsar(dataChannels2, Instance2, []string{"60000", "60001", "60002"})
 		default:
 			log.Fatalf("Unknown command. Please provide either 'server', 'instance1', or 'instance2'. Got: %s", args[1])
 		}

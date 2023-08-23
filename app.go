@@ -1,5 +1,4 @@
 // app.go
-// app.go
 package main
 
 import (
@@ -18,7 +17,7 @@ var upgrader = websocket.FastHTTPUpgrader{
 	},
 }
 
-func StartServer(dataChannels []chan []byte, port1 string, port2 string) {
+func StartServer(dataChannels [][]chan []byte, ports1 []string, ports2 []string) {
 	log.Println("Server started")
 
 	fs := &fasthttp.FS{
@@ -27,35 +26,13 @@ func StartServer(dataChannels []chan []byte, port1 string, port2 string) {
 	}
 	fsHandler := fs.NewRequestHandler()
 
-	go func() {
-		ln, err := net.Listen("tcp", ":"+port1)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			go handleConn(conn, dataChannels[0])
-		}
-	}()
+	for i, port := range ports1 {
+		go startTCPListener(port, dataChannels[0][i])
+	}
 
-	go func() {
-		ln, err := net.Listen("tcp", ":"+port2)
-		if err != nil {
-			log.Fatal(err)
-		}
-		for {
-			conn, err := ln.Accept()
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			go handleConn(conn, dataChannels[1])
-		}
-	}()
+	for i, port := range ports2 {
+		go startTCPListener(port, dataChannels[1][i])
+	}
 
 	server := fasthttp.Server{
 		Handler: func(ctx *fasthttp.RequestCtx) {
@@ -75,21 +52,38 @@ func StartServer(dataChannels []chan []byte, port1 string, port2 string) {
 	log.Fatal(server.ListenAndServe(":8080"))
 }
 
-func handleWebsocket(ctx *fasthttp.RequestCtx, dataChannel chan []byte) {
-	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
-		defer conn.Close()
-
-		for data := range dataChannel {
-			err := conn.WriteMessage(websocket.TextMessage, data)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-		}
-	})
-
+func startTCPListener(port string, dataChannel chan []byte) {
+	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
+	}
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		go handleConn(conn, dataChannel)
+	}
+}
+
+func handleWebsocket(ctx *fasthttp.RequestCtx, dataChannels []chan []byte) {
+	for _, dataChannel := range dataChannels {
+		err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
+			defer conn.Close()
+
+			for data := range dataChannel {
+				err := conn.WriteMessage(websocket.TextMessage, data)
+				if err != nil {
+					log.Println(err)
+					break
+				}
+			}
+		})
+
+		if err != nil {
+			log.Println(err)
+		}
 	}
 }
 
