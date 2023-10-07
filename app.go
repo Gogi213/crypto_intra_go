@@ -10,8 +10,8 @@ import (
 )
 
 var upgrader = websocket.FastHTTPUpgrader{
-	ReadBufferSize:  200000,
-	WriteBufferSize: 200000,
+	ReadBufferSize:  100000,
+	WriteBufferSize: 100000,
 	CheckOrigin: func(ctx *fasthttp.RequestCtx) bool {
 		return true
 	},

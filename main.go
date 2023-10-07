@@ -1,4 +1,3 @@
-// main.go
 package main
 
 import (
@@ -42,6 +41,8 @@ func main() {
 			go StartPulsar(dataChannels[4], Instance5, []string{"9000", "9001", "9002"})
 		case "instance6":
 			go StartPulsar(dataChannels[5], Instance6, []string{"10000", "10001", "10002"})
+		case "binance_api":
+			UpdateCurrencyPairsToCSV()
 		default:
 			log.Fatalf("Unknown command. Please provide either 'server', 'instance1', or 'instance2'. Got: %s", args[1])
 		}
