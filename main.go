@@ -1,7 +1,7 @@
+// main.go
 package main
 
 import (
-	"encoding/csv"
 	"fmt"
 	"log"
 	"os"
@@ -52,20 +52,4 @@ func main() {
 	// Wait for user input to stop the program
 	var input string
 	fmt.Scanln(&input)
-}
-
-func writeDataToCSV(data []string) {
-	file, err := os.OpenFile("data.csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal("Unable to open or create file: ", err)
-	}
-	defer file.Close()
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-
-	err = writer.Write(data)
-	if err != nil {
-		log.Fatal("Unable to write data to file: ", err)
-	}
 }

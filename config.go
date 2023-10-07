@@ -7,7 +7,7 @@ var Instance1 = Config{
 	PairsList: [][]string{
 		{"1inchbtc","1inchbusd","1inchusdt","aavebnb","aavebtc","aavebusd","aaveusdt","acabtc","acabusd","acatry","acausdt","achbtc","achbusd","achtry","achusdt","acmbusd","acmusdt","adabnb","adabrl","adabtc","adabusd","adaeth","adaeur","adatry","adausdt","adadownusdt","adaupusdt","adxusdt","aergousdt","agixbtc","agixbusd","agixtry","agixusdt","agldbtc","agldbusd","agldusdt","akrousdt","alcxusdt","algobtc","algobusd","algotry","algousdt","alicebusd","aliceusdt","alpacabtc","alpacabusd","alpacausdt","alphausdt","alpinebusd","alpinetry","alpineusdt","ambbusd","ambusdt","ampbusd","ampusdt","ankrbtc","ankrbusd","ankrtry","ankrusdt","antusdt","apebtc","apebusd","apetry","apeusdt","api3usdt","aptbtc","aptbusd","apttry","aptusdt","arbtc","arusdt","arbbtc","arbeth","arbtry","arbtusd","arbusdt","ardrusdt","arkbusd","arkmbnb","arkmbtc"},
 	},
-}
+}	
 
 var Instance2 = Config{
 	APIKeys:        []string{"jByRuDyDvM3bQl71hLgadWt932jodjvpJRqvXsQRIWHfpSZwxYBR7BWFBOXO7o6b", "ceox9ksHbEyMQiOkSkH0k2VnFWkiojJEucGIMRUZXUq3dLCuOqV81nQIjCh0PLK5"},

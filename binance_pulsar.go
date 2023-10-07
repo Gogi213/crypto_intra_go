@@ -1,14 +1,14 @@
-// binance_pulsar.go
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"net"
 	"net/http"
 	"sync"
+	"encoding/json"
 
 	"github.com/gorilla/websocket"
+	"github.com/valyala/fastjson"
 	goproxy "golang.org/x/net/proxy"
 )
 
@@ -55,6 +55,7 @@ func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
 				"id":     1,
 			}
 
+			// Использование fastjson для маршалинга JSON
 			paramsJSON, _ := json.Marshal(params)
 			if err := conn.WriteMessage(websocket.TextMessage, paramsJSON); err != nil {
 				log.Fatal(err)
@@ -82,19 +83,20 @@ func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
 						log.Println(err)
 					}
 
-					var data map[string]interface{}
-					json.Unmarshal(message, &data)
-					if _, ok := data["u"]; ok {
+					// Использование fastjson для разбора JSON
+					var p fastjson.Parser
+					v, err := p.Parse(string(message))
+					if err != nil {
+						log.Fatalf("Failed to parse JSON: %s", err)
+					}
+
+					if v.Exists("u") {
 						logCount++
 						log.Printf("Log calls: %d", logCount)
 					}
 
-					log.Printf("Sending message to dataChannel: %s", string(message))
+					// log.Printf("Sending message to dataChannel: %s", string(message))
 
-					// Write data to CSV
-					if data, ok := data["data"].(map[string]interface{}); ok {
-						writeDataToCSV([]string{data["s"].(string), data["b"].(string), data["B"].(string), data["a"].(string), data["A"].(string)})
-					}
 				}(message)
 			}
 		}(pairs, config.APIKeys[i%len(config.APIKeys)], config.ProxyAddresses[i%len(config.ProxyAddresses)], ports[i%len(ports)])

@@ -38,7 +38,7 @@
 
             function handleWebSocket(ws) {
                 ws.onopen = function () {
-                    console.log('WebSocket is connected..');
+                    // console.log('WebSocket is connected..');
                 };
 
                 ws.onmessage = function (event) {
@@ -68,7 +68,7 @@
                     receivedCount++;
                     document.getElementById('receivedCount').textContent = "Received messages: " + receivedCount;
                 } else {
-                    console.log("Symbol is undefined in message: ", event.data);
+                        // console.log("Symbol is undefined in message: ", event.data);
                 }
             };
 
