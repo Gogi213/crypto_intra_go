@@ -1,4 +1,3 @@
-// app.go
 package main
 
 import (
@@ -17,7 +16,7 @@ var upgrader = websocket.FastHTTPUpgrader{
 	},
 }
 
-func StartServer(dataChannels [][]chan []byte, ports1 []string, ports2 []string) {
+func StartServer(dataChannels [][]chan []byte, ports []string) {
 	log.Println("Server started")
 
 	fs := &fasthttp.FS{
@@ -26,12 +25,15 @@ func StartServer(dataChannels [][]chan []byte, ports1 []string, ports2 []string)
 	}
 	fsHandler := fs.NewRequestHandler()
 
-	for i, port := range ports1 {
-		go startTCPListener(port, dataChannels[0][i])
-	}
-
-	for i, port := range ports2 {
-		go startTCPListener(port, dataChannels[1][i])
+	portIndex := 0
+	for _, chs := range dataChannels {
+		for _, ch := range chs {
+			if portIndex >= len(ports) {
+				log.Fatal("Not enough ports provided")
+			}
+			go startTCPListener(ports[portIndex], ch)
+			portIndex++
+		}
 	}
 
 	server := fasthttp.Server{
@@ -40,9 +42,17 @@ func StartServer(dataChannels [][]chan []byte, ports1 []string, ports2 []string)
 			case "/":
 				fsHandler(ctx)
 			case "/ws1":
-				handleWebsocket(ctx, dataChannels[0])
+				handleWebsocket(ctx, dataChannels[0][0])
 			case "/ws2":
-				handleWebsocket(ctx, dataChannels[1])
+				handleWebsocket(ctx, dataChannels[1][0])
+			case "/ws3":
+				handleWebsocket(ctx, dataChannels[2][0])
+			case "/ws4":
+				handleWebsocket(ctx, dataChannels[3][0])
+			case "/ws5":
+				handleWebsocket(ctx, dataChannels[4][0])
+			case "/ws6":
+				handleWebsocket(ctx, dataChannels[5][0])
 			default:
 				ctx.Error("Unsupported path", fasthttp.StatusNotFound)
 			}
@@ -67,23 +77,21 @@ func startTCPListener(port string, dataChannel chan []byte) {
 	}
 }
 
-func handleWebsocket(ctx *fasthttp.RequestCtx, dataChannels []chan []byte) {
-	for _, dataChannel := range dataChannels {
-		err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
-			defer conn.Close()
+func handleWebsocket(ctx *fasthttp.RequestCtx, dataChannel chan []byte) {
+	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
+		defer conn.Close()
 
-			for data := range dataChannel {
-				err := conn.WriteMessage(websocket.TextMessage, data)
-				if err != nil {
-					log.Println(err)
-					break
-				}
+		for data := range dataChannel {
+			err := conn.WriteMessage(websocket.TextMessage, data)
+			if err != nil {
+				log.Println(err)
+				break
 			}
-		})
-
-		if err != nil {
-			log.Println(err)
 		}
+	})
+
+	if err != nil {
+		log.Println(err)
 	}
 }
 

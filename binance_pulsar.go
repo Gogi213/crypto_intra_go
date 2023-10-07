@@ -1,4 +1,4 @@
-// binance_pulsar
+// binance_pulsar.go
 package main
 
 import (

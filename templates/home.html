@@ -29,6 +29,10 @@
     <script>
             var ws1 = new WebSocket('ws://localhost:8080/ws1');
             var ws2 = new WebSocket('ws://localhost:8080/ws2');
+                var ws3 = new WebSocket('ws://localhost:8080/ws3');
+                var ws4 = new WebSocket('ws://localhost:8080/ws4');
+                var ws5 = new WebSocket('ws://localhost:8080/ws5');
+                var ws6 = new WebSocket('ws://localhost:8080/ws6');
         var table = $('#binanceTable').DataTable();
             var receivedCount = 0;
 
@@ -68,13 +72,17 @@
                 }
             };
 
-        ws.onerror = function (err) {
-            console.log('WebSocket error: ', err);
-        };
-    }
+                ws.onerror = function (err) {
+                    console.log('WebSocket error: ', err);
+                };
+            }
 
-    handleWebSocket(ws1);
-    handleWebSocket(ws2);
+                handleWebSocket(ws1);
+                handleWebSocket(ws2);
+                handleWebSocket(ws3);
+                handleWebSocket(ws4);
+                handleWebSocket(ws5);
+                handleWebSocket(ws6);
     </script>
 </body>
 </html>
