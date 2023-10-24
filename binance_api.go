@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -30,7 +30,8 @@ type MergedInfo struct {
 	Status   string
 }
 
-// UpdateCurrencyPairsToCSV обновляет список валютных пар в CSV-файле
+const volumeThreshold = 300000.0  // Пороговое значение объема торгов
+
 func UpdateCurrencyPairsToCSV() {
 	resp, err := http.Get("https://api.binance.com/api/v3/ticker/bookTicker")
 	if err != nil {
@@ -39,7 +40,7 @@ func UpdateCurrencyPairsToCSV() {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal("Error reading response body:", err)
 		return
@@ -58,7 +59,7 @@ func UpdateCurrencyPairsToCSV() {
 	}
 	defer resp.Body.Close()
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal("Error reading volume response body:", err)
 		return
@@ -101,6 +102,16 @@ func UpdateCurrencyPairsToCSV() {
 	writer.Write([]string{"symbol", "bid", "ask", "24h volume($)", "status"})
 
 	for _, m := range merged {
-		writer.Write([]string{m.Symbol, m.BidPrice, m.AskPrice, strconv.FormatFloat(m.Volume, 'f', 2, 64), m.Status})
+		if m.Volume <= volumeThreshold && m.Status == "Trading" {
+			bidPrice, err1 := strconv.ParseFloat(m.BidPrice, 64)
+			askPrice, err2 := strconv.ParseFloat(m.AskPrice, 64)
+			if err1 != nil || err2 != nil {
+				log.Fatal("Error parsing bid or ask price to float:", err1, err2)
+				return
+			}
+			if bidPrice != 0 && askPrice != 0 {
+				writer.Write([]string{m.Symbol, m.BidPrice, m.AskPrice, strconv.FormatFloat(m.Volume, 'f', 2, 64), m.Status})
+			}
+		}
 	}
 }

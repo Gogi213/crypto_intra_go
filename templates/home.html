@@ -1,4 +1,3 @@
-<!-- home.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -29,11 +28,15 @@
     <script>
             var ws1 = new WebSocket('ws://localhost:8080/ws1');
             var ws2 = new WebSocket('ws://localhost:8080/ws2');
-                var ws3 = new WebSocket('ws://localhost:8080/ws3');
-                var ws4 = new WebSocket('ws://localhost:8080/ws4');
-                var ws5 = new WebSocket('ws://localhost:8080/ws5');
-                var ws6 = new WebSocket('ws://localhost:8080/ws6');
-        var table = $('#binanceTable').DataTable();
+            var ws3 = new WebSocket('ws://localhost:8080/ws3');
+            var ws4 = new WebSocket('ws://localhost:8080/ws4');
+            var ws5 = new WebSocket('ws://localhost:8080/ws5');
+            var ws6 = new WebSocket('ws://localhost:8080/ws6');
+
+            var table = $('#binanceTable').DataTable({
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]]
+            });
+
             var receivedCount = 0;
 
             function handleWebSocket(ws) {
@@ -41,11 +44,11 @@
                     // console.log('WebSocket is connected..');
                 };
 
-                ws.onmessage = function (event) {
-                    var data = JSON.parse(event.data);
-                    if (data.data && data.data.s) {
-                        var symbol = data.data.s.toLowerCase();
-                        var row = table.row('#' + symbol);
+            ws.onmessage = function (event) {
+                var data = JSON.parse(event.data);
+                if (data.data && data.data.s) {
+                    var symbol = data.data.s.toLowerCase();
+                    var row = table.row('#' + symbol);
 
                     if (!row.length) {
                         table.row.add({
@@ -68,21 +71,21 @@
                     receivedCount++;
                     document.getElementById('receivedCount').textContent = "Received messages: " + receivedCount;
                 } else {
-                        // console.log("Symbol is undefined in message: ", event.data);
+                    // console.log("Symbol is undefined in message: ", event.data);
                 }
             };
 
-                ws.onerror = function (err) {
-                    console.log('WebSocket error: ', err);
-                };
-            }
+            ws.onerror = function (err) {
+                console.log('WebSocket error: ', err);
+            };
+        }
 
-                handleWebSocket(ws1);
-                handleWebSocket(ws2);
-                handleWebSocket(ws3);
-                handleWebSocket(ws4);
-                handleWebSocket(ws5);
-                handleWebSocket(ws6);
+            handleWebSocket(ws1);
+            handleWebSocket(ws2);
+            handleWebSocket(ws3);
+            handleWebSocket(ws4);
+            handleWebSocket(ws5);
+            handleWebSocket(ws6);
     </script>
 </body>
 </html>

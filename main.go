@@ -30,6 +30,7 @@ func main() {
 		switch args[1] {
 		case "server":
 			go StartServer(dataChannels, []string{"5000", "5001", "5002", "6000", "6001", "6002", "7000", "7001", "7002", "8000", "8001", "8002", "9000", "9001", "9002", "10000", "10001", "10002"})
+			UpdateCurrencyPairsToCSV()
 		case "instance1":
 			go StartPulsar(dataChannels[0], Instance1, []string{"5000", "5001", "5002"})
 		case "instance2":
@@ -42,8 +43,6 @@ func main() {
 			go StartPulsar(dataChannels[4], Instance5, []string{"9000", "9001", "9002"})
 		case "instance6":
 			go StartPulsar(dataChannels[5], Instance6, []string{"10000", "10001", "10002"})
-		case "binance_api":
-			UpdateCurrencyPairsToCSV()
 		default:
 			log.Fatalf("Unknown command. Please provide either 'server', 'instance1', or 'instance2'. Got: %s", args[1])
 		}
