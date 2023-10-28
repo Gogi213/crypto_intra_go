@@ -13,6 +13,9 @@ import (
 	"github.com/thrasher-corp/gocryptotrader/exchanges/binance"
 )
 
+// ExchangePairsList - глобальная переменная для хранения списка пар
+var ExchangePairsList []string
+
 type MergedInfo struct {
 	Symbol   string
 	BidPrice float64
@@ -52,9 +55,6 @@ func UpdateCurrencyPairsToCSV() {
 
 	writer.Write([]string{"symbol", "bid", "ask", "24h volume($)", "status"})
 
-	// Датафрейм для хранения информации о символах
-	var exchangePairsList []string
-
 	t := tabby.New()
 	t.AddHeader("SYMBOL", "BID", "ASK", "24H VOLUME($)", "STATUS")
 
@@ -64,20 +64,17 @@ func UpdateCurrencyPairsToCSV() {
 				row := []string{m.Symbol, strconv.FormatFloat(m.BidPrice, 'f', 2, 64), strconv.FormatFloat(m.AskPrice, 'f', 2, 64), strconv.FormatFloat(m.Volume, 'f', 2, 64), m.Status}
 				writer.Write(row)
 
-				// Добавляем только символ в датафрейм
-				exchangePairsList = append(exchangePairsList, m.Symbol)
+				// Используем глобальную переменную ExchangePairsList
+				ExchangePairsList = append(ExchangePairsList, m.Symbol)
 
-				// Выводим информацию в консоль с использованием Tabby
 				t.AddLine(m.Symbol, strconv.FormatFloat(m.BidPrice, 'f', 2, 64), strconv.FormatFloat(m.AskPrice, 'f', 2, 64), strconv.FormatFloat(m.Volume, 'f', 2, 64), m.Status)
 			}
 		}
 	}
 
-	// Сортируем датафрейм по убыванию
-	sort.Sort(sort.Reverse(sort.StringSlice(exchangePairsList)))
+	// Сортируем ExchangePairsList
+	sort.Sort(sort.Reverse(sort.StringSlice(ExchangePairsList)))
 
 	// Выводим таблицу в консоль
 	t.Print()
-
-	// Здесь вы можете использовать exchangePairsList для дальнейшей работы с датафреймом
 }
