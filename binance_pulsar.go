@@ -7,26 +7,38 @@ import (
 	"net/http"
 	"sync"
 	"encoding/json"
-
 	"github.com/gorilla/websocket"
 	"github.com/valyala/fastjson"
 	goproxy "golang.org/x/net/proxy"
 )
 
-type Config struct {
-	APIKeys        []string
-	ProxyAddresses []string
-	PairsList      [][]string
-}
+type Config = GoCryptoTraderConfig
 
-func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
+func StartPulsar(dataChannels []chan []byte, config GoCryptoTraderConfig, ports []string) {
 	var wg sync.WaitGroup
 	var logCount int
 
-	for i, pairs := range config.PairsList {
+	log.Println("StartPulsar called")  // Log 1: Check if StartPulsar is called
+
+	// Transform ExchangePairsList into a 2D slice of strings
+	var pairsList [][]string
+	chunkSize := len(ExchangePairsList) / 6  // Size of each sub-slice
+	for i := 0; i < len(ExchangePairsList); i += chunkSize {
+		end := i + chunkSize
+		if end > len(ExchangePairsList) {
+			end = len(ExchangePairsList)
+		}
+		pairsList = append(pairsList, ExchangePairsList[i:end])
+	}
+
+	log.Printf("Pairs List: %v", pairsList)  // Log 2: Check the content of pairsList
+
+	for i, pairs := range pairsList {
 		wg.Add(1)
 		go func(pairs []string, apiKey string, proxyAddress string, port string) {
 			defer wg.Done()
+
+			log.Printf("Goroutine for pairs: %v started", pairs)  // Log 3: Check if the goroutine starts and what pairs are passed
 
 			for i, pair := range pairs {
 				pairs[i] = pair + "@bookTicker"
@@ -56,7 +68,6 @@ func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
 				"id":     1,
 			}
 
-			// Использование fastjson для маршалинга JSON
 			paramsJSON, _ := json.Marshal(params)
 			if err := conn.WriteMessage(websocket.TextMessage, paramsJSON); err != nil {
 				log.Fatal(err)
@@ -84,7 +95,6 @@ func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
 						log.Println(err)
 					}
 
-					// Использование fastjson для разбора JSON
 					var p fastjson.Parser
 					v, err := p.Parse(string(message))
 					if err != nil {
@@ -95,13 +105,11 @@ func StartPulsar(dataChannels []chan []byte, config Config, ports []string) {
 						logCount++
 						log.Printf("Log calls: %d", logCount)
 					}
-
-					// log.Printf("Sending message to dataChannel: %s", string(message))
-
 				}(message)
 			}
 		}(pairs, config.APIKeys[i%len(config.APIKeys)], config.ProxyAddresses[i%len(config.ProxyAddresses)], ports[i%len(ports)])
 	}
 
 	wg.Wait()
+	log.Println("All goroutines finished")  // Log 5: All goroutines are done
 }
